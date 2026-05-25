@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+  "dev": "nodemon server.js",
+  "start": "node server.js",
+  "db:init": "node init-db.js",
+  "db:seed": "node seed-db.js",
+  "setup": "npm install && node init-db.js"
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14",
+    "pg": "^8.21.0"
+  }
+}
