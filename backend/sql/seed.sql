@@ -60,7 +60,24 @@ WHERE
 (e.email = 'lucy.bennett@company.com' AND m.email = 'daniel.brooks@company.com');
 
 
--- 4. Default schedule
+-- 4. Demo user accounts
+-- All demo accounts use the password: Password123!
+INSERT INTO user_accounts (employee_id, email, password_hash, role)
+SELECT e.employee_id, x.email, x.password_hash, x.role
+FROM (
+  VALUES
+  ('mark.evans@company.com', 'scrypt$32927b31688aa25199c5684f7dc66df7$6e72360b1bebc821572326a7f691fa2b50d5a2be8cbebb6f659cdd86add25272c54a3d12f948973b7dae56c3c197cb2e5798e14542d332d94d5afbb7e2e78fa2', 'admin'),
+  ('alex.turner@company.com', 'scrypt$cc0596b3015fc3db9c1bddde29cb0a7b$3e8f82257958490d305bc3008c1ac21bb7a2e61b7168b255d86c8fc483fd8c81595737d96c97eeb9c5725e6fa30173b3859a9396a35f3854e72c3629d6d35e0c', 'manager'),
+  ('priya.shah@company.com', 'scrypt$36a2f0f49702caee36159b5df60e418b$08671f37643a7097cb8b953f17f6330edfb637b1e5c1550741ba1ddeac2d93e1e4e6643264ac1f5f8d35bd01e0ea71bb7b852e79b946abb637afd0828eaf1a02', 'employee')
+) AS x(email, password_hash, role)
+JOIN employees e ON e.email = x.email
+ON CONFLICT (email) DO UPDATE
+SET password_hash = EXCLUDED.password_hash,
+    role = EXCLUDED.role,
+    is_active = TRUE;
+
+
+-- 5. Default schedule
 INSERT INTO employee_default_schedule (employee_id, day_of_week, location_id)
 SELECT e.employee_id, x.day_of_week, wl.location_id
 FROM (
@@ -129,7 +146,7 @@ JOIN work_locations wl ON wl.location_name = x.location_name
 ON CONFLICT (employee_id, day_of_week) DO NOTHING;
 
 
--- 5. Sample attendance records
+-- 6. Sample attendance records
 INSERT INTO attendance_records (
   employee_id,
   attendance_date,
@@ -162,7 +179,7 @@ JOIN work_locations actual ON actual.location_name = x.actual_location
 ON CONFLICT (employee_id, attendance_date) DO NOTHING;
 
 
--- 6. Sample location requests
+-- 7. Sample location requests
 INSERT INTO location_requests (
   employee_id,
   request_date,
@@ -189,7 +206,7 @@ JOIN work_locations wl ON wl.location_name = x.location_name
 JOIN employees approver ON approver.email = x.approver_email;
 
 
--- 7. Sample audit records
+-- 8. Sample audit records
 INSERT INTO audit_records (
   employee_id,
   audit_date,
