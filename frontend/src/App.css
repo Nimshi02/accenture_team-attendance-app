@@ -182,3 +182,247 @@
     border-right-color: var(--border);
   }
 }
+.page {
+  padding: 30px;
+  background: #f6f8fb;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.card,
+.section {
+  background: white;
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.card {
+  text-align: center;
+}
+
+.section {
+  margin-top: 25px;
+}
+
+.schedule {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.day {
+  background: #eef3ff;
+  padding: 18px;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.progress {
+  width: 80%;
+  height: 12px;
+  background: #ddd;
+  border-radius: 20px;
+}
+
+.progress-fill {
+  width: 80%;
+  height: 100%;
+  background: #4b5563;
+  border-radius: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th,
+td {
+  padding: 14px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+.dashboard-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f8fafc;
+  font-family: Arial, sans-serif;
+}
+
+.sidebar {
+  width: 260px;
+  background: #fff;
+  border-right: 1px solid #d9dee7;
+  padding: 24px;
+}
+
+.sidebar h3 {
+  font-size: 16px;
+  margin-bottom: 28px;
+}
+
+.sidebar button {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.sidebar button.active,
+.sidebar button:hover {
+  background: #eaf2ff;
+  color: #214f9c;
+  font-weight: 600;
+}
+
+.main-area {
+  flex: 1;
+  padding: 32px;
+}
+
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-row h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.top-row p {
+  color: #596172;
+}
+
+.date-btn {
+  background: white;
+  border: 1px solid #cfd6e0;
+  border-radius: 10px;
+  padding: 12px 18px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin: 28px 0;
+}
+
+.summary-card,
+.panel {
+  background: white;
+  border: 1px solid #cfd6e0;
+  border-radius: 12px;
+  padding: 22px;
+}
+
+.summary-card {
+  text-align: center;
+  min-height: 145px;
+}
+
+.summary-card h4 {
+  margin-top: 0;
+}
+
+.summary-card h2 {
+  margin-bottom: 4px;
+}
+
+.summary-card p,
+.panel p,
+.panel span {
+  color: #596172;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr;
+  gap: 24px;
+}
+
+.large {
+  min-height: 150px;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 18px;
+  border: 1px solid #d9dee7;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.day-box {
+  min-height: 140px;
+  padding: 16px 8px;
+  text-align: center;
+  border-right: 1px solid #d9dee7;
+}
+
+.day-box:last-child {
+  border-right: none;
+}
+
+.day-box:nth-child(2) {
+  background: #eef4ff;
+}
+
+.progress-bar {
+  height: 14px;
+  background: #d8dde5;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-top: 28px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 80%;
+  background: #404956;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 16px;
+  margin-top: 14px;
+  border: 1px solid #cfd6e0;
+  background: white;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-link {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  color: #1f2937;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.side-link:hover {
+  background: #eaf2ff;
+  color: #214f9c;
+  font-weight: 600;
+}
