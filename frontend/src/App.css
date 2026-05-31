@@ -167,7 +167,7 @@
 
   &::before,
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -4.5px;
     border: 5px solid transparent;
@@ -182,3 +182,244 @@
     border-right-color: var(--border);
   }
 }
+
+/* Jinod - start */
+.app-layout {
+  display: flex;
+  min-height: 100svh;
+}
+
+.side-navigation {
+  width: 240px;
+  flex: 0 0 240px;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 18px;
+  box-sizing: border-box;
+  background: #111827;
+  color: #e5e7eb;
+  text-align: left;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
+
+.app-layout {
+  display: flex;
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  background: #f7f8fb;
+  color: var(--text);
+}
+
+.side-navigation {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  width: 240px;
+  flex: 0 0 240px;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 28px 20px;
+  gap: 24px;
+  padding: 24px 18px;
+  box-sizing: border-box;
+  background: #111827;
+  color: #e5e7eb;
+  text-align: left;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  gap: 10px;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.brand-name {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.nav-link,
+.logout-button {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.nav-link {
+  padding: 9px 12px;
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.nav-link:hover,
+.nav-link:focus-visible,
+.nav-link.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.logout-button {
+  width: 100%;
+  margin-top: auto;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fecaca;
+  cursor: pointer;
+  text-align: left;
+}
+
+.logout-button:hover,
+.logout-button:focus-visible {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: #f87171;
+}
+
+.nav-link:focus-visible,
+.logout-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .side-navigation {
+    width: 100%;
+    min-height: auto;
+    flex-basis: auto;
+  }
+
+  .nav-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    flex: 1 1 130px;
+    justify-content: center;
+  }
+
+  .logout-button {
+    justify-content: center;
+    margin-top: 0;
+  }
+}
+
+/* Jinod - end */
