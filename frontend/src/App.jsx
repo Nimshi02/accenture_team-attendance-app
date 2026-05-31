@@ -1,50 +1,22 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
+import DashboardPage from "./pages/DashboardPage";
+import LoginPage from "./pages/LoginPage";
+import { getStoredSession, logout } from "./services/authService";
+import "./App.css";
 
 function App() {
-  const [employees, setEmployees] = useState([]);
+  const [session, setSession] = useState(() => getStoredSession());
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/employees")
-      .then((response) => {
-        setEmployees(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching employees:", error);
-      });
-  }, []);
+  const handleLogout = () => {
+    logout();
+    setSession(null);
+  };
 
-  return (
-    <div style={{ padding: "30px", fontFamily: "Arial" }}>
-      <h1>Team Attendance App</h1>
-      <h2>Employees</h2>
+  if (!session) {
+    return <LoginPage onLogin={setSession} />;
+  }
 
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Type</th>
-            <th>Manager</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {employees.map((employee) => (
-            <tr key={employee.employee_id}>
-              <td>{employee.employee_id}</td>
-              <td>{employee.full_name}</td>
-              <td>{employee.email}</td>
-              <td>{employee.employment_type}</td>
-              <td>{employee.manager_name}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <DashboardPage session={session} onLogout={handleLogout} />;
 }
 
 export default App;
