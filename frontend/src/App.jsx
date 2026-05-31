@@ -1,21 +1,24 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
+import DashboardPage from "./pages/DashboardPage";
+import LoginPage from "./pages/LoginPage";
+import { getStoredSession, logout } from "./services/authService";
+import "./App.css";
 
 function App() {
+  const [session, setSession] = useState(() => getStoredSession());
   const [employees, setEmployees] = useState([]);
   const navigationItems = ["Dashboard", "My Schedule", "Work Location"];
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/employees")
-      .then((response) => {
-        setEmployees(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching employees:", error);
-      });
-  }, []);
+  const handleLogout = () => {
+    logout();
+    setSession(null);
+  };
 
+  if (!session) {
+    return <LoginPage onLogin={setSession} />;
+  }
+
+  return <DashboardPage session={session} onLogout={handleLogout} />;
   return (
     <div className="app-layout">
       <aside className="side-navigation" aria-label="Primary navigation">
