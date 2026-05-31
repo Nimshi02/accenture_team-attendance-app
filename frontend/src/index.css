@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .dashboard-page {
   display: flex;
   min-height: 100vh;
@@ -45,10 +46,30 @@
 }
 
 .top-header h1 {
+=======
+:root {
+  color: #243042;
+  background: #f6f8fb;
+  font: 16px/1.5 system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2,
+p {
+>>>>>>> d8429156a780d9128ff5babf3a668837e27f3645
   margin: 0;
   font-size: 28px;
 }
 
+<<<<<<< HEAD
 .top-header p {
   color: #6b7280;
   margin-top: 6px;
@@ -59,6 +80,23 @@
   border: 1px solid #d1d5db;
   border-radius: 10px;
   padding: 10px 16px;
+=======
+h1,
+h2 {
+  color: #141b2d;
+  font-weight: 750;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 1.25rem;
+  line-height: 1.2;
+>>>>>>> d8429156a780d9128ff5babf3a668837e27f3645
 }
 
 .summary-grid {

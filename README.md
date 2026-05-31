@@ -41,13 +41,14 @@ POSTGRES_PORT=5433
 Create `backend/.env`:
 
 ```env
-PORT=5000
+PORT=5001
 
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=team_attendance_db
 DB_PORT=5433
 DB_HOST=localhost
+AUTH_TOKEN_SECRET=change-this-dev-secret
 ```
 
 ---
@@ -73,7 +74,7 @@ npm run dev
 Backend runs on:
 
 ```txt
-http://localhost:5000
+http://localhost:5001
 ```
 
 ---
@@ -96,14 +97,30 @@ http://localhost:5173
 
 ## API Test Endpoints
 
+### Login
+
+```txt
+POST http://localhost:5001/api/auth/login
+```
+
+Demo accounts use the password `Password123!`:
+
+```txt
+Admin: mark.evans@company.com
+Manager: alex.turner@company.com
+Employee: priya.shah@company.com
+```
+
 ### Employees
 
 ```txt
-http://localhost:5000/api/employees
+http://localhost:5001/api/employees
 ```
+
+This endpoint requires a bearer token. Admin users can view all employees; manager users can view themselves and their direct reports.
 
 ### Schedules
 
 ```txt
-http://localhost:5000/api/schedules
+http://localhost:5001/api/schedules
 ```
