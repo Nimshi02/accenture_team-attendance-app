@@ -299,9 +299,28 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
               <path d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
             </svg>
           </button>
-          <span className="user-avatar" aria-hidden="true">
-            {session.user.full_name.slice(0, 1)}
-          </span>
+          <div className="profile-menu">
+            <button className="user-avatar" type="button" aria-label="Open profile menu">
+              {session.user.full_name.slice(0, 1)}
+            </button>
+            <div className="profile-menu-panel">
+              <button onClick={() => setActivePage("profile")} type="button">
+                My Profile
+              </button>
+              <button onClick={() => setActivePage("my-schedule")} type="button">
+                My Work Schedule
+              </button>
+              <button onClick={() => setActivePage("attendance")} type="button">
+                Attendance
+              </button>
+              <button onClick={() => setActivePage("notifications")} type="button">
+                Notifications
+              </button>
+              <button onClick={onLogout} type="button">
+                Log out
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
