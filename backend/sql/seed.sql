@@ -229,3 +229,46 @@ FROM (
 JOIN employees e ON e.email = x.email
 JOIN work_locations wl ON wl.location_name = x.expected_location
 JOIN employees auditor ON auditor.email = x.auditor_email;
+
+
+-- 9. Sample notifications
+INSERT INTO notifications (
+  employee_id,
+  category,
+  type,
+  title,
+  message,
+  is_read,
+  created_at
+)
+SELECT
+  e.employee_id,
+  x.category,
+  x.type,
+  x.title,
+  x.message,
+  x.is_read,
+  x.created_at::TIMESTAMP
+FROM (
+  VALUES
+  ('priya.shah@company.com', 'requests', 'info', 'Your submitted location request for 16 May is approved', 'Your manager approved the location change request.', FALSE, '2026-05-29 10:30:00'),
+  ('priya.shah@company.com', 'general', 'success', 'Your work location for 12 May has been recorded successfully', 'Attendance and work location details were saved.', FALSE, '2026-05-28 09:00:00'),
+  ('priya.shah@company.com', 'general', 'info', 'Reminder: Please submit your work location for tomorrow', 'Your schedule is missing tomorrow''s work location.', TRUE, '2026-05-27 15:10:00'),
+  ('priya.shah@company.com', 'requests', 'warning', 'Team meeting scheduled on 15 May at 9:00 AM', 'Please attend from your planned location.', TRUE, '2026-05-27 08:40:00'),
+  ('priya.shah@company.com', 'system', 'system', 'System maintenance scheduled on 25 May from 9:00 PM to 10:00 AM', 'Attendance services may be briefly unavailable.', TRUE, '2026-05-26 14:00:00'),
+
+  ('alex.turner@company.com', 'requests', 'info', 'Priya Shah submitted a new work location request', 'Review the request before the next schedule update.', FALSE, '2026-05-29 11:15:00'),
+  ('alex.turner@company.com', 'general', 'warning', 'Two team members have pending location updates', 'Check team attendance before end of day.', FALSE, '2026-05-29 09:45:00'),
+  ('alex.turner@company.com', 'system', 'system', 'Weekly report is ready to view', 'Your team attendance report has been generated.', TRUE, '2026-05-28 16:00:00'),
+
+  ('mark.evans@company.com', 'system', 'system', 'System health report generated', 'The platform report is available for review.', FALSE, '2026-05-29 08:30:00'),
+  ('mark.evans@company.com', 'general', 'info', 'Attendance audit completed', 'Daily audit completed with no critical issues.', TRUE, '2026-05-28 17:20:00')
+) AS x(email, category, type, title, message, is_read, created_at)
+JOIN employees e ON e.email = x.email
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM notifications n
+  WHERE n.employee_id = e.employee_id
+    AND n.title = x.title
+    AND n.created_at = x.created_at::TIMESTAMP
+);

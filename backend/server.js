@@ -230,6 +230,82 @@ app.get("/api/employees", authenticate, authorize("admin", "manager"), async (re
   }
 });
 
+app.get("/api/notifications", authenticate, async (req, res) => {
+  try {
+    const { category = "all" } = req.query;
+    const values = [req.user.employee_id];
+    let categoryFilter = "";
+
+    if (category !== "all") {
+      values.push(category);
+      categoryFilter = "AND category = $2";
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        notification_id,
+        category,
+        type,
+        title,
+        message,
+        is_read,
+        created_at
+      FROM notifications
+      WHERE employee_id = $1
+      ${categoryFilter}
+      ORDER BY created_at DESC, notification_id DESC;
+      `,
+      values
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/notifications/unread-count", authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT COUNT(*)::INTEGER AS unread_count
+      FROM notifications
+      WHERE employee_id = $1 AND is_read = FALSE;
+      `,
+      [req.user.employee_id]
+    );
+
+    res.json({ unread_count: result.rows[0].unread_count });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+app.patch("/api/notifications/read-all", authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      UPDATE notifications
+      SET is_read = TRUE
+      WHERE employee_id = $1 AND is_read = FALSE
+      RETURNING notification_id;
+      `,
+      [req.user.employee_id]
+    );
+
+    res.json({ updated_count: result.rowCount });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
 
 const PORT = process.env.PORT || 5000;
 

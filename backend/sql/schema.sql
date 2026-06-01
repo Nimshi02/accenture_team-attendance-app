@@ -63,3 +63,18 @@ CREATE TABLE IF NOT EXISTS audit_records (
   checked_by INTEGER NOT NULL REFERENCES employees(employee_id),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+  notification_id SERIAL PRIMARY KEY,
+  employee_id INTEGER NOT NULL REFERENCES employees(employee_id) ON DELETE CASCADE,
+  category VARCHAR(20) NOT NULL CHECK (
+    category IN ('general', 'requests', 'system')
+  ),
+  type VARCHAR(20) NOT NULL CHECK (
+    type IN ('info', 'success', 'warning', 'error', 'system')
+  ),
+  title VARCHAR(160) NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
