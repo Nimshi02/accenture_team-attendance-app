@@ -19,3 +19,22 @@ export const login = async (credentials) => {
 export const logout = () => {
   localStorage.removeItem(sessionKey);
 };
+
+export const updateStoredSessionUser = (userUpdates) => {
+  const storedSession = getStoredSession();
+
+  if (!storedSession) {
+    return null;
+  }
+
+  const updatedSession = {
+    ...storedSession,
+    user: {
+      ...storedSession.user,
+      ...userUpdates,
+    },
+  };
+
+  localStorage.setItem(sessionKey, JSON.stringify(updatedSession));
+  return updatedSession;
+};

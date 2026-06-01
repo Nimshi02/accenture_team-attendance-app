@@ -32,6 +32,39 @@ VALUES
 ('Lucy Bennett', 'lucy.bennett@company.com', 'FT')
 ON CONFLICT (email) DO NOTHING;
 
+UPDATE employees e
+SET
+  phone_number = x.phone_number,
+  date_of_birth = x.date_of_birth::DATE,
+  address = x.address,
+  department = x.department,
+  designation = x.designation,
+  date_of_joining = x.date_of_joining::DATE
+FROM (
+  VALUES
+  ('alex.turner@company.com', '+61 98765 43210', '1989-03-14', '123 Green Street, Bangalore, Karnataka - 560001', 'Product Team', 'Team Manager', '2021-01-04'),
+  ('emma.wright@company.com', '+61 98765 43211', '1991-06-22', '45 Lake View Road, Melbourne, VIC - 3000', 'Product Team', 'Team Lead', '2021-03-15'),
+  ('daniel.brooks@company.com', '+61 98765 43212', '1988-11-02', '18 Park Avenue, Sydney, NSW - 2000', 'Engineering', 'Team Lead', '2020-08-10'),
+  ('mark.evans@company.com', '+61 98765 43213', '1984-02-19', '7 King Street, Brisbane, QLD - 4000', 'Operations', 'Admin Manager', '2019-04-01'),
+  ('priya.shah@company.com', '+61 98765 43214', '1995-05-14', '123 Green Street, Bangalore, Karnataka - 560001', 'Product Team', 'Software Engineer', '2024-01-01'),
+  ('ben.collins@company.com', '+61 98765 43215', '1997-09-08', '28 Collins Street, Melbourne, VIC - 3000', 'Product Team', 'Support Analyst', '2024-02-12'),
+  ('lucas.nguyen@company.com', '+61 98765 43216', '1993-01-27', '3 Harbour Road, Sydney, NSW - 2000', 'Product Team', 'Software Engineer', '2022-07-18'),
+  ('james.wilson@company.com', '+61 98765 43217', '1990-12-05', '19 Queen Street, Brisbane, QLD - 4000', 'Product Team', 'QA Engineer', '2021-10-04'),
+  ('chloe.martin@company.com', '+61 98765 43218', '1994-04-17', '92 High Street, Adelaide, SA - 5000', 'Design', 'UX Designer', '2023-05-22'),
+  ('sarah.oneill@company.com', '+61 98765 43219', '1998-08-30', '14 North Terrace, Adelaide, SA - 5000', 'Design', 'Content Designer', '2024-03-04'),
+  ('olivia.chen@company.com', '+61 98765 43220', '1996-07-11', '66 Swanston Street, Melbourne, VIC - 3000', 'Design', 'Product Designer', '2023-09-11'),
+  ('sophie.laurent@company.com', '+61 98765 43221', '1992-10-26', '51 George Street, Sydney, NSW - 2000', 'Design', 'Researcher', '2022-02-07'),
+  ('ahmed.hassan@company.com', '+61 98765 43222', '1987-03-03', '20 William Street, Perth, WA - 6000', 'Engineering', 'Backend Engineer', '2020-11-16'),
+  ('tom.riley@company.com', '+61 98765 43223', '1991-12-21', '9 Elizabeth Street, Hobart, TAS - 7000', 'Engineering', 'DevOps Engineer', '2021-06-28'),
+  ('nina.patel@company.com', '+61 98765 43224', '1995-01-12', '31 Murray Street, Perth, WA - 6000', 'Engineering', 'Frontend Engineer', '2023-01-09'),
+  ('ryan.murphy@company.com', '+61 98765 43225', '1990-05-06', '17 Flinders Lane, Melbourne, VIC - 3000', 'Engineering', 'QA Analyst', '2021-09-20'),
+  ('hannah.scott@company.com', '+61 98765 43226', '1999-02-28', '70 Crown Street, Wollongong, NSW - 2500', 'Operations', 'Coordinator', '2024-04-15'),
+  ('aisha.khan@company.com', '+61 98765 43227', '1996-06-18', '5 Station Road, Geelong, VIC - 3220', 'Product Team', 'Business Analyst', '2023-08-14'),
+  ('chris.walker@company.com', '+61 98765 43228', '1989-09-24', '84 Bridge Road, Richmond, VIC - 3121', 'Design', 'UX Engineer', '2022-05-30'),
+  ('lucy.bennett@company.com', '+61 98765 43229', '1993-11-15', '12 Eagle Street, Brisbane, QLD - 4000', 'Engineering', 'Data Analyst', '2022-12-05')
+) AS x(email, phone_number, date_of_birth, address, department, designation, date_of_joining)
+WHERE e.email = x.email;
+
 
 -- 3. Manager relationships
 UPDATE employees e

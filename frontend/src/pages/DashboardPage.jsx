@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import { getUnreadNotificationCount } from "../services/notificationService";
 import Attendance from "./Attendance";
+import MySchedulePage from "./MySchedulePage";
 import NotificationsPage from "./NotificationsPage";
+import ProfilePage from "./ProfilePage";
 
 const weeklySchedule = [
   { day: "Mon", date: "12 May", location: "Office" },
@@ -97,7 +99,7 @@ function ScheduleIcon({ location }) {
   );
 }
 
-function DashboardPage({ session, onLogout }) {
+function DashboardPage({ onLogout, onSessionUpdate, session }) {
   const [activePage, setActivePage] = useState("dashboard");
   const [notificationCount, setNotificationCount] = useState(0);
   const [selectedScheduleDate, setSelectedScheduleDate] = useState("13 May");
@@ -131,6 +133,10 @@ function DashboardPage({ session, onLogout }) {
       return <Attendance />;
     }
 
+    if (activePage === "my-schedule") {
+      return <MySchedulePage session={session} />;
+    }
+
     if (activePage === "notifications") {
       return (
         <NotificationsPage
@@ -138,6 +144,10 @@ function DashboardPage({ session, onLogout }) {
           session={session}
         />
       );
+    }
+
+    if (activePage === "profile") {
+      return <ProfilePage onSessionUpdate={onSessionUpdate} session={session} />;
     }
 
     return renderDashboardHome();
@@ -211,7 +221,11 @@ function DashboardPage({ session, onLogout }) {
             <h3>
               My Schedule <span>(This Week)</span>
             </h3>
-            <button className="text-button" type="button">
+            <button
+              className="text-button"
+              onClick={() => setActivePage("my-schedule")}
+              type="button"
+            >
               View Calendar
             </button>
           </div>

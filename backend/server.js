@@ -130,6 +130,117 @@ const authorize = (...roles) => (req, res, next) => {
   next();
 };
 
+const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+const formatDateOnly = (date) => date.toISOString().slice(0, 10);
+
+const parseDateOnly = (value) => {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+};
+
+const startOfWeek = (date) => {
+  const weekStart = new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate()
+  ));
+  const dayOffset = weekStart.getUTCDay() === 0 ? -6 : 1 - weekStart.getUTCDay();
+  weekStart.setUTCDate(weekStart.getUTCDate() + dayOffset);
+
+  return weekStart;
+};
+
+const endOfMonth = (date) =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
+
+const startOfMonth = (date) =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+
+const workingDayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+const buildScheduleResponse = async (employeeId, requestedDate, view = "week") => {
+  const isMonthView = view === "month";
+  const periodStart = isMonthView ? startOfMonth(requestedDate) : startOfWeek(requestedDate);
+  const periodEnd = isMonthView ? endOfMonth(requestedDate) : new Date(periodStart);
+
+  if (!isMonthView) {
+    periodEnd.setUTCDate(periodStart.getUTCDate() + 6);
+  }
+
+  const scheduleResult = await pool.query(
+    `
+    SELECT
+      eds.day_of_week,
+      wl.location_name
+    FROM employee_default_schedule eds
+    JOIN work_locations wl ON wl.location_id = eds.location_id
+    WHERE eds.employee_id = $1;
+    `,
+    [employeeId]
+  );
+
+  const locationByDay = scheduleResult.rows.reduce((locationMap, schedule) => ({
+    ...locationMap,
+    [schedule.day_of_week]: schedule.location_name,
+  }), {});
+
+  const dayCount = Math.round((periodEnd - periodStart) / 86400000) + 1;
+
+  const days = Array.from({ length: dayCount }, (_, index) => {
+    const date = new Date(periodStart);
+    date.setUTCDate(periodStart.getUTCDate() + index);
+
+    const dayName = dayNames[date.getUTCDay()];
+    const isWorkingDay = date.getUTCDay() >= 1 && date.getUTCDay() <= 5;
+    const plannedLocation = isWorkingDay
+      ? locationByDay[dayName] || "Office"
+      : null;
+
+    return {
+      date: formatDateOnly(date),
+      day_name: dayName,
+      planned_location: plannedLocation,
+      schedule_type: isWorkingDay ? "Full Day" : null,
+    };
+  });
+
+  const recurring = Object.entries(
+    days
+      .filter((day) => day.planned_location)
+      .reduce((groups, day) => ({
+        ...groups,
+        [day.planned_location]: (groups[day.planned_location] || []).includes(day.day_name)
+          ? groups[day.planned_location]
+          : [
+              ...(groups[day.planned_location] || []),
+              day.day_name,
+            ],
+      }), {})
+  ).map(([location_name, days_of_week]) => ({
+    location_name,
+    days_of_week,
+  }));
+
+  return {
+    view: isMonthView ? "month" : "week",
+    week_start: formatDateOnly(startOfWeek(requestedDate)),
+    week_end: formatDateOnly((() => {
+      const weekEnd = startOfWeek(requestedDate);
+      weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+      return weekEnd;
+    })()),
+    period_start: formatDateOnly(periodStart),
+    period_end: formatDateOnly(periodEnd),
+    days,
+    recurring,
+  };
+};
+
 app.get("/", (req, res) => {
   res.send("Team Attendance Backend Running");
 });
@@ -195,6 +306,210 @@ app.post("/api/auth/login", async (req, res) => {
 
 app.get("/api/auth/me", authenticate, (req, res) => {
   res.json({ user: publicUserFields(req.user) });
+});
+
+app.get("/api/profile", authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        e.employee_id,
+        e.full_name,
+        e.email,
+        e.employment_type,
+        e.phone_number,
+        e.date_of_birth,
+        e.address,
+        e.department,
+        e.designation,
+        e.date_of_joining,
+        COALESCE(ua.role, 'employee') AS role,
+        m.full_name AS manager_name
+      FROM employees e
+      LEFT JOIN employees m ON m.employee_id = e.manager_id
+      LEFT JOIN user_accounts ua ON ua.employee_id = e.employee_id
+      WHERE e.employee_id = $1;
+      `,
+      [req.user.employee_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+app.patch("/api/profile", authenticate, async (req, res) => {
+  try {
+    const {
+      address,
+      date_of_birth,
+      full_name,
+      phone_number,
+    } = req.body;
+
+    const normalizedName = typeof full_name === "string" ? full_name.trim() : "";
+
+    if (!normalizedName) {
+      return res.status(400).json({ error: "Full name is required" });
+    }
+
+    const nullableText = (value) => {
+      if (typeof value !== "string") {
+        return null;
+      }
+
+      const trimmedValue = value.trim();
+      return trimmedValue || null;
+    };
+
+    const nullableDate = (value) => {
+      if (!value) {
+        return null;
+      }
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        throw new Error("Dates must use YYYY-MM-DD format");
+      }
+
+      return value;
+    };
+
+    const result = await pool.query(
+      `
+      WITH updated_employee AS (
+        UPDATE employees
+        SET
+          full_name = $2,
+          phone_number = $3,
+          date_of_birth = $4,
+          address = $5
+        WHERE employee_id = $1
+        RETURNING *
+      )
+      SELECT
+        e.employee_id,
+        e.full_name,
+        e.email,
+        e.employment_type,
+        e.phone_number,
+        e.date_of_birth,
+        e.address,
+        e.department,
+        e.designation,
+        e.date_of_joining,
+        COALESCE(ua.role, 'employee') AS role,
+        m.full_name AS manager_name
+      FROM updated_employee e
+      LEFT JOIN employees m ON m.employee_id = e.manager_id
+      LEFT JOIN user_accounts ua ON ua.employee_id = e.employee_id;
+      `,
+      [
+        req.user.employee_id,
+        normalizedName,
+        nullableText(phone_number),
+        nullableDate(date_of_birth),
+        nullableText(address),
+      ]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    const status = error.message.includes("YYYY-MM-DD") ? 400 : 500;
+
+    res.status(status).json({
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/schedule", authenticate, async (req, res) => {
+  try {
+    const requestedDate = parseDateOnly(req.query.week_start) || new Date();
+    const view = req.query.view === "month" ? "month" : "week";
+    const schedule = await buildScheduleResponse(req.user.employee_id, requestedDate, view);
+
+    res.json(schedule);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+app.patch("/api/schedule/recurring", authenticate, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { schedule, view, week_start } = req.body;
+
+    if (!Array.isArray(schedule) || schedule.length !== workingDayNames.length) {
+      return res.status(400).json({ error: "A schedule for Monday to Friday is required" });
+    }
+
+    const locationResult = await client.query(
+      "SELECT location_id, location_name FROM work_locations;"
+    );
+    const locationIdsByName = locationResult.rows.reduce((locationMap, location) => ({
+      ...locationMap,
+      [location.location_name]: location.location_id,
+    }), {});
+
+    for (const item of schedule) {
+      if (!workingDayNames.includes(item.day_of_week)) {
+        return res.status(400).json({ error: "Schedule can only include weekdays" });
+      }
+
+      if (!locationIdsByName[item.location_name]) {
+        return res.status(400).json({ error: "Unknown work location" });
+      }
+    }
+
+    await client.query("BEGIN");
+    await client.query(
+      "DELETE FROM employee_default_schedule WHERE employee_id = $1;",
+      [req.user.employee_id]
+    );
+
+    for (const item of schedule) {
+      await client.query(
+        `
+        INSERT INTO employee_default_schedule (employee_id, day_of_week, location_id)
+        VALUES ($1, $2, $3);
+        `,
+        [
+          req.user.employee_id,
+          item.day_of_week,
+          locationIdsByName[item.location_name],
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    const requestedDate = parseDateOnly(week_start) || new Date();
+    const updatedSchedule = await buildScheduleResponse(
+      req.user.employee_id,
+      requestedDate,
+      view === "month" ? "month" : "week"
+    );
+
+    res.json(updatedSchedule);
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    res.status(500).json({
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
 });
 
 app.get("/api/employees", authenticate, authorize("admin", "manager"), async (req, res) => {

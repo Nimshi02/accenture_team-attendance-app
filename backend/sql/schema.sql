@@ -11,6 +11,14 @@ CREATE TABLE IF NOT EXISTS employees (
   manager_id INTEGER REFERENCES employees(employee_id)
 );
 
+ALTER TABLE employees
+  ADD COLUMN IF NOT EXISTS phone_number VARCHAR(30),
+  ADD COLUMN IF NOT EXISTS date_of_birth DATE,
+  ADD COLUMN IF NOT EXISTS address TEXT,
+  ADD COLUMN IF NOT EXISTS department VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS designation VARCHAR(100),
+  ADD COLUMN IF NOT EXISTS date_of_joining DATE;
+
 CREATE TABLE IF NOT EXISTS user_accounts (
   user_id SERIAL PRIMARY KEY,
   employee_id INTEGER UNIQUE NOT NULL REFERENCES employees(employee_id) ON DELETE CASCADE,

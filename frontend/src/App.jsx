@@ -16,7 +16,13 @@ function App() {
     return <LoginPage onLogin={setSession} />;
   }
 
-  return <DashboardPage session={session} onLogout={handleLogout} />;
+  return (
+    <DashboardPage
+      session={session}
+      onLogout={handleLogout}
+      onSessionUpdate={setSession}
+    />
+  );
 }
 
 export default App;
