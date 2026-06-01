@@ -1,11 +1,11 @@
 import { useState } from "react";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
-import { getStoredSession, logout } from "./services/authService";
+import { logout } from "./services/authService";
 import "./App.css";
 
 function App() {
-  const [session, setSession] = useState(() => getStoredSession());
+  const [session, setSession] = useState(null);
 
   const handleLogout = () => {
     logout();
