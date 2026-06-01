@@ -740,7 +740,7 @@ button.summary-card:focus-visible {
   border-radius: 50%;
   background:
     radial-gradient(circle, #ffffff 55%, transparent 57%),
-    conic-gradient(var(--accent) 80%, #e5e7eb 0);
+    conic-gradient(var(--accent) var(--attendance-rate, 0%), #e5e7eb 0);
 }
 
 .mini-attendance-ring strong {
@@ -902,7 +902,6 @@ button.day-box.selected {
 }
 
 .progress-fill {
-  width: 80%;
   height: 100%;
   background: linear-gradient(90deg, #1f3a8a 0 50%, #7c3aed 50% 80%, #ef4444 80%);
 }
@@ -960,7 +959,7 @@ button.day-box.selected {
   border-radius: 50%;
   background:
     radial-gradient(circle, #ffffff 57%, transparent 59%),
-    conic-gradient(var(--accent) 80%, #e5e7eb 0);
+    conic-gradient(var(--accent) var(--attendance-rate, 0%), #e5e7eb 0);
 }
 
 .attendance-ring strong {

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
-import { getTodayAttendance } from "../services/attendanceService";
+import {
+  getAttendanceSummary,
+  getTodayAttendance,
+} from "../services/attendanceService";
 import { getUnreadNotificationCount } from "../services/notificationService";
 import { getSchedule } from "../services/scheduleService";
 import Attendance from "./Attendance";
@@ -44,8 +47,8 @@ const baseSummaryCards = [
   {
     icon: "score",
     label: "This Week Attendance",
-    value: "80%",
-    detail: "4 / 5 Days",
+    value: "Loading...",
+    detail: "From attendance records",
   },
 ];
 
@@ -134,6 +137,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
   const [activePage, setActivePage] = useState("dashboard");
   const [dashboardSchedule, setDashboardSchedule] = useState(null);
   const [dashboardScheduleError, setDashboardScheduleError] = useState("");
+  const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [notificationCount, setNotificationCount] = useState(0);
   const [selectedScheduleDate, setSelectedScheduleDate] = useState(() =>
     toDateInputValue(new Date())
@@ -169,14 +173,16 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
 
     const loadDashboardData = async () => {
       try {
-        const [scheduleData, attendanceData] = await Promise.all([
+        const [scheduleData, attendanceData, summaryData] = await Promise.all([
           getSchedule(session.token),
           getTodayAttendance(session.token),
+          getAttendanceSummary(session.token),
         ]);
 
         if (isMounted) {
           setDashboardSchedule(scheduleData);
           setTodayAttendance(attendanceData);
+          setAttendanceSummary(summaryData);
           setDashboardScheduleError("");
           const today = toDateInputValue(new Date());
           const selectedDate = scheduleData.days.some((day) => day.date === today)
@@ -190,6 +196,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
       } catch (requestError) {
         if (isMounted) {
           setDashboardSchedule(null);
+          setAttendanceSummary(null);
           setTodayAttendance(null);
           setDashboardScheduleError(
             requestError.response?.data?.error || "Could not load today's location"
@@ -216,6 +223,12 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
   })) || [];
   const todaySchedule = weeklySchedule.find((day) => day.isToday);
   const todayLocation = todayAttendance?.actual_location || todaySchedule?.location;
+  const isDashboardDataLoaded = Boolean(dashboardSchedule && attendanceSummary);
+  const scheduledDays = weeklySchedule.filter((day) => day.location).length;
+  const totalPresent = attendanceSummary?.total_present || 0;
+  const attendanceRate = scheduledDays > 0
+    ? Math.round((totalPresent / scheduledDays) * 100)
+    : 0;
   const summaryCards = baseSummaryCards.map((card) =>
     {
       if (card.label === "Today's Location") {
@@ -241,6 +254,22 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
           detail: todayAttendance
             ? `Actual location: ${displayLocation(todayAttendance.actual_location)}`
             : "No attendance record for today",
+        };
+      }
+
+      if (card.label === "This Week Attendance") {
+        return {
+          ...card,
+          value: !isDashboardDataLoaded
+            ? "Loading..."
+            : dashboardScheduleError
+            ? "Unavailable"
+            : `${attendanceRate}%`,
+          detail: !isDashboardDataLoaded
+            ? "From attendance records"
+            : dashboardScheduleError
+            ? dashboardScheduleError
+            : `${totalPresent} / ${scheduledDays} Days`,
         };
       }
 
@@ -339,7 +368,10 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             <h4>{card.label}</h4>
             {card.icon === "score" ? (
               <div className="metric-attendance">
-                <div className="mini-attendance-ring">
+                <div
+                  className="mini-attendance-ring"
+                  style={{ "--attendance-rate": `${attendanceRate}%` }}
+                >
                   <strong>{card.value}</strong>
                 </div>
                 <p>
@@ -439,15 +471,22 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
                 <span className="absent-dot" /> Absent
               </div>
               <div className="progress-bar">
-                <div className="progress-fill" />
+                <div
+                  className="progress-fill"
+                  style={{ width: `${attendanceRate}%` }}
+                />
               </div>
               <div className="attendance-stats">
-                <span>4 present</span>
-                <span>1 absent</span>
+                <span>{totalPresent} present</span>
+                <span>{attendanceSummary?.total_absent || 0} absent</span>
               </div>
             </div>
-            <div className="attendance-ring" aria-label="80 percent attendance">
-              <strong>80%</strong>
+            <div
+              className="attendance-ring"
+              aria-label={`${attendanceRate} percent attendance`}
+              style={{ "--attendance-rate": `${attendanceRate}%` }}
+            >
+              <strong>{attendanceRate}%</strong>
               <span>Overall</span>
             </div>
           </div>

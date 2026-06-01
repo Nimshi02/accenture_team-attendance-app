@@ -449,7 +449,7 @@ app.get("/api/attendance/today", authenticate, async (req, res) => {
       `
       SELECT
         ar.attendance_id,
-        ar.attendance_date,
+        TO_CHAR(ar.attendance_date, 'YYYY-MM-DD') AS attendance_date,
         planned.location_name AS planned_location,
         actual.location_name AS actual_location,
         ar.status
@@ -477,14 +477,40 @@ app.get("/api/attendance/summary", authenticate, async (req, res) => {
     const weekEnd = new Date(weekStart);
     weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
 
-    const result = await pool.query(
+    const summaryResult = await pool.query(
       `
       SELECT
         COUNT(*) FILTER (WHERE ar.status = 'Present')::INTEGER AS total_present,
-        COUNT(*) FILTER (WHERE ar.status = 'Absent')::INTEGER AS total_absent
+        COUNT(*) FILTER (WHERE ar.status = 'Absent')::INTEGER AS total_absent,
+        COUNT(*) FILTER (
+          WHERE ar.status = 'Present' AND actual.location_name = 'Home'
+        )::INTEGER AS total_work_from_home
       FROM attendance_records ar
+      JOIN work_locations actual ON actual.location_id = ar.actual_location_id
       WHERE ar.employee_id = $1
         AND ar.attendance_date BETWEEN $2 AND $3;
+      `,
+      [
+        req.user.employee_id,
+        formatDateOnly(weekStart),
+        formatDateOnly(weekEnd),
+      ]
+    );
+
+    const recordsResult = await pool.query(
+      `
+      SELECT
+        ar.attendance_id,
+        TO_CHAR(ar.attendance_date, 'YYYY-MM-DD') AS attendance_date,
+        planned.location_name AS planned_location,
+        actual.location_name AS actual_location,
+        ar.status
+      FROM attendance_records ar
+      JOIN work_locations planned ON planned.location_id = ar.planned_location_id
+      JOIN work_locations actual ON actual.location_id = ar.actual_location_id
+      WHERE ar.employee_id = $1
+        AND ar.attendance_date BETWEEN $2 AND $3
+      ORDER BY ar.attendance_date;
       `,
       [
         req.user.employee_id,
@@ -496,8 +522,10 @@ app.get("/api/attendance/summary", authenticate, async (req, res) => {
     res.json({
       week_start: formatDateOnly(weekStart),
       week_end: formatDateOnly(weekEnd),
-      total_present: result.rows[0].total_present,
-      total_absent: result.rows[0].total_absent,
+      total_present: summaryResult.rows[0].total_present,
+      total_absent: summaryResult.rows[0].total_absent,
+      total_work_from_home: summaryResult.rows[0].total_work_from_home,
+      records: recordsResult.rows,
     });
   } catch (error) {
     res.status(500).json({
