@@ -1,6 +1,13 @@
 :root {
-  color: #243042;
-  background: #f6f8fb;
+  --text: #243042;
+  --muted: #677287;
+  --accent: #4b3fe1;
+  --surface: #ffffff;
+  --border: #e6e9f2;
+  --page-bg: #f8f9fd;
+
+  color: var(--text);
+  background: var(--page-bg);
   font: 16px/1.5 system-ui, "Segoe UI", Roboto, Arial, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -14,12 +21,16 @@ body {
 
 h1,
 h2,
+h3,
+h4,
 p {
   margin: 0;
 }
 
 h1,
-h2 {
+h2,
+h3,
+h4 {
   color: #141b2d;
   font-weight: 750;
   letter-spacing: 0;
