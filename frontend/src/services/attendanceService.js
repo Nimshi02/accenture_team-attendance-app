@@ -13,3 +13,14 @@ export const getTodayAttendance = async (token) => {
 
   return response.data;
 };
+
+export const getAttendanceSummary = async (token, weekStart) => {
+  const response = await axios.get(`${API_BASE_URL}/api/attendance/summary`, {
+    ...authHeaders(token),
+    params: {
+      ...(weekStart ? { week_start: weekStart } : {}),
+    },
+  });
+
+  return response.data;
+};

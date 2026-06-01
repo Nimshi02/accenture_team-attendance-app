@@ -1,6 +1,45 @@
+import { useEffect, useState } from "react";
 import "../App.css";
+import { getAttendanceSummary } from "../services/attendanceService";
 
-export default function Attendance() {
+export default function Attendance({ session }) {
+  const [attendanceSummary, setAttendanceSummary] = useState(null);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAttendanceSummary = async () => {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const summary = await getAttendanceSummary(session.token);
+
+        if (isMounted) {
+          setAttendanceSummary(summary);
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setError(
+            requestError.response?.data?.error || "Could not load attendance summary"
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadAttendanceSummary();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session.token]);
+
   return (
     <div className="dashboard-home">
         <div className="top-header">
@@ -14,8 +53,12 @@ export default function Attendance() {
         <div className="summary-grid">
           <div className="summary-card">
             <h4>Total Present</h4>
-            <h2>4 Days</h2>
-            <p>This week</p>
+            <h2>
+              {isLoading
+                ? "Loading..."
+                : `${attendanceSummary?.total_present || 0} Days`}
+            </h2>
+            <p>{error || "This week"}</p>
           </div>
 
           <div className="summary-card">

@@ -250,7 +250,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
 
   const renderPage = () => {
     if (activePage === "attendance") {
-      return <Attendance />;
+      return <Attendance session={session} />;
     }
 
     if (activePage === "my-schedule") {

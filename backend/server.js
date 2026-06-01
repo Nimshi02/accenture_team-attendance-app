@@ -470,6 +470,42 @@ app.get("/api/attendance/today", authenticate, async (req, res) => {
   }
 });
 
+app.get("/api/attendance/summary", authenticate, async (req, res) => {
+  try {
+    const requestedDate = parseDateOnly(req.query.week_start) || new Date();
+    const weekStart = startOfWeek(requestedDate);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
+
+    const result = await pool.query(
+      `
+      SELECT
+        COUNT(*) FILTER (WHERE ar.status = 'Present')::INTEGER AS total_present,
+        COUNT(*) FILTER (WHERE ar.status = 'Absent')::INTEGER AS total_absent
+      FROM attendance_records ar
+      WHERE ar.employee_id = $1
+        AND ar.attendance_date BETWEEN $2 AND $3;
+      `,
+      [
+        req.user.employee_id,
+        formatDateOnly(weekStart),
+        formatDateOnly(weekEnd),
+      ]
+    );
+
+    res.json({
+      week_start: formatDateOnly(weekStart),
+      week_end: formatDateOnly(weekEnd),
+      total_present: result.rows[0].total_present,
+      total_absent: result.rows[0].total_absent,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
 app.patch("/api/schedule/recurring", authenticate, async (req, res) => {
   const client = await pool.connect();
 
