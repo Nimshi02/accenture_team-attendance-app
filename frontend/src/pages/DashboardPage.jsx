@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import { getUnreadNotificationCount } from "../services/notificationService";
+import Attendance from "./Attendance";
 import NotificationsPage from "./NotificationsPage";
 
 const weeklySchedule = [
@@ -126,6 +127,10 @@ function DashboardPage({ session, onLogout }) {
   }, [session.token]);
 
   const renderPage = () => {
+    if (activePage === "attendance") {
+      return <Attendance />;
+    }
+
     if (activePage === "notifications") {
       return (
         <NotificationsPage

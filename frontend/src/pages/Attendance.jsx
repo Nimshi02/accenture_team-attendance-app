@@ -2,20 +2,7 @@ import "../App.css";
 
 export default function Attendance() {
   return (
-    <div className="dashboard-page">
-      <aside className="sidebar">
-        <h3>Work Location App</h3>
-        <p>Dashboard</p>
-        <p>My Schedule</p>
-        <p>Work Location</p>
-        <p>Requests</p>
-        <p className="active">Attendance</p>
-        <p>Notifications</p>
-        <p>Profile</p>
-        <p>Logout</p>
-      </aside>
-
-      <main className="content">
+    <div className="dashboard-home">
         <div className="top-header">
           <div>
             <h1>Attendance</h1>
@@ -97,7 +84,6 @@ export default function Attendance() {
             </tbody>
           </table>
         </section>
-      </main>
     </div>
   );
 }

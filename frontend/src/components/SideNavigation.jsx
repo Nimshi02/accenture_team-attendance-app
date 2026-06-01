@@ -18,12 +18,6 @@ const navigationItems = [
     roles: ["employee", "manager", "admin"],
   },
   {
-    href: "#requests",
-    icon: "document",
-    label: "Requests",
-    roles: ["employee", "manager", "admin"],
-  },
-  {
     href: "#attendance",
     icon: "clock",
     label: "Attendance",
