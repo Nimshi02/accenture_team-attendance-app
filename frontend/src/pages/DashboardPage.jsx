@@ -293,7 +293,11 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
           </button>
           <button className="date-btn" type="button">
             <span>{formatLongDate(selectedScheduleDate)}</span>
-            <span className="date-icon" aria-hidden="true" />
+            <svg className="date-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 3v3M17 3v3" />
+              <path d="M4 8h16" />
+              <path d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+            </svg>
           </button>
           <span className="user-avatar" aria-hidden="true">
             {session.user.full_name.slice(0, 1)}
