@@ -1,27 +1,32 @@
 import { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import { getUnreadNotificationCount } from "../services/notificationService";
+import { getSchedule } from "../services/scheduleService";
 import Attendance from "./Attendance";
 import MySchedulePage from "./MySchedulePage";
 import NotificationsPage from "./NotificationsPage";
 import ProfilePage from "./ProfilePage";
 
-const weeklySchedule = [
-  { day: "Mon", date: "12 May", location: "Office" },
-  { day: "Tue", date: "13 May", location: "Office", isToday: true },
-  { day: "Wed", date: "14 May", location: "Work From Home" },
-  { day: "Thu", date: "15 May", location: "Office" },
-  { day: "Fri", date: "16 May", location: "Work From Home" },
-  { day: "Sat", date: "17 May", location: "Client Site" },
-  { day: "Sun", date: "18 May", location: "-" },
-];
+const dayLabels = {
+  Friday: "Fri",
+  Monday: "Mon",
+  Saturday: "Sat",
+  Sunday: "Sun",
+  Thursday: "Thu",
+  Tuesday: "Tue",
+  Wednesday: "Wed",
+};
 
-const summaryCards = [
+const locationLabels = {
+  Home: "Work From Home",
+};
+
+const baseSummaryCards = [
   {
     icon: "building",
     label: "Today's Location",
-    value: "Office",
-    detail: "Bangalore",
+    value: "Loading...",
+    detail: "From schedule",
   },
   {
     icon: "check",
@@ -73,7 +78,7 @@ function ScheduleIcon({ location }) {
     );
   }
 
-  if (location === "Work From Home") {
+  if (location === "Home" || location === "Work From Home") {
     return (
       <svg className="schedule-icon home" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 11.5 12 5l8 6.5" />
@@ -99,10 +104,39 @@ function ScheduleIcon({ location }) {
   );
 }
 
+const toDateInputValue = (date) => date.toISOString().slice(0, 10);
+
+const parseDateOnly = (value) => {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+};
+
+const formatShortDate = (value) =>
+  parseDateOnly(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+
+const formatLongDate = (value) =>
+  parseDateOnly(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+    weekday: "short",
+    year: "numeric",
+  });
+
+const displayLocation = (location) => locationLabels[location] || location || "-";
+
 function DashboardPage({ onLogout, onSessionUpdate, session }) {
   const [activePage, setActivePage] = useState("dashboard");
+  const [dashboardSchedule, setDashboardSchedule] = useState(null);
+  const [dashboardScheduleError, setDashboardScheduleError] = useState("");
   const [notificationCount, setNotificationCount] = useState(0);
-  const [selectedScheduleDate, setSelectedScheduleDate] = useState("13 May");
+  const [selectedScheduleDate, setSelectedScheduleDate] = useState(() =>
+    toDateInputValue(new Date())
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -127,6 +161,66 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
       isMounted = false;
     };
   }, [session.token]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboardSchedule = async () => {
+      try {
+        const data = await getSchedule(session.token);
+
+        if (isMounted) {
+          setDashboardSchedule(data);
+          setDashboardScheduleError("");
+          const today = toDateInputValue(new Date());
+          const selectedDate = data.days.some((day) => day.date === today)
+            ? today
+            : data.days[0]?.date;
+
+          if (selectedDate) {
+            setSelectedScheduleDate(selectedDate);
+          }
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setDashboardSchedule(null);
+          setDashboardScheduleError(
+            requestError.response?.data?.error || "Could not load today's location"
+          );
+        }
+      }
+    };
+
+    loadDashboardSchedule();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session.token]);
+
+  const todayValue = toDateInputValue(new Date());
+  const weeklySchedule = dashboardSchedule?.days.map((day) => ({
+    day: dayLabels[day.day_name] || day.day_name.slice(0, 3),
+    date: formatShortDate(day.date),
+    fullDate: day.date,
+    isToday: day.date === todayValue,
+    location: day.planned_location,
+    locationLabel: displayLocation(day.planned_location),
+  })) || [];
+  const todaySchedule = weeklySchedule.find((day) => day.isToday);
+  const summaryCards = baseSummaryCards.map((card) =>
+    card.label === "Today's Location"
+      ? {
+          ...card,
+          value: dashboardScheduleError
+            ? "Unavailable"
+            : displayLocation(todaySchedule?.location),
+          detail: todaySchedule
+            ? formatLongDate(todaySchedule.fullDate)
+            : dashboardScheduleError || "No schedule found",
+        }
+      : card
+  );
 
   const renderPage = () => {
     if (activePage === "attendance") {
@@ -172,7 +266,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             {notificationCount > 0 && <span>{notificationCount}</span>}
           </button>
           <button className="date-btn" type="button">
-            <span>Tue, 13 May 2025</span>
+            <span>{formatLongDate(selectedScheduleDate)}</span>
             <span className="date-icon" aria-hidden="true" />
           </button>
           <span className="user-avatar" aria-hidden="true">
@@ -230,24 +324,28 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             </button>
           </div>
           <div className="week-grid">
-            {weeklySchedule.map((schedule) => (
+            {weeklySchedule.length > 0 ? weeklySchedule.map((schedule) => (
               <button
                 className={
-                  schedule.date === selectedScheduleDate
+                  schedule.fullDate === selectedScheduleDate
                     ? "day-box selected"
                     : "day-box"
                 }
-                key={`${schedule.day}-${schedule.date}`}
-                onClick={() => setSelectedScheduleDate(schedule.date)}
+                key={`${schedule.day}-${schedule.fullDate}`}
+                onClick={() => setSelectedScheduleDate(schedule.fullDate)}
                 type="button"
               >
                 <ScheduleIcon location={schedule.location} />
                 <span>{schedule.day}</span>
                 <strong>{schedule.date}</strong>
-                <small>{schedule.location}</small>
+                <small>{schedule.locationLabel}</small>
                 {schedule.isToday && <em>Today</em>}
               </button>
-            ))}
+            )) : (
+              <p className="profile-status">
+                {dashboardScheduleError || "Loading schedule..."}
+              </p>
+            )}
           </div>
         </section>
 
