@@ -443,6 +443,33 @@ app.get("/api/schedule", authenticate, async (req, res) => {
   }
 });
 
+app.get("/api/attendance/today", authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        ar.attendance_id,
+        ar.attendance_date,
+        planned.location_name AS planned_location,
+        actual.location_name AS actual_location,
+        ar.status
+      FROM attendance_records ar
+      JOIN work_locations planned ON planned.location_id = ar.planned_location_id
+      JOIN work_locations actual ON actual.location_id = ar.actual_location_id
+      WHERE ar.employee_id = $1
+        AND ar.attendance_date = CURRENT_DATE;
+      `,
+      [req.user.employee_id]
+    );
+
+    res.json(result.rows[0] || null);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
 app.patch("/api/schedule/recurring", authenticate, async (req, res) => {
   const client = await pool.connect();
 

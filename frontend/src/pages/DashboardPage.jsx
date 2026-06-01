@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
+import { getTodayAttendance } from "../services/attendanceService";
 import { getUnreadNotificationCount } from "../services/notificationService";
 import { getSchedule } from "../services/scheduleService";
 import Attendance from "./Attendance";
@@ -31,8 +32,8 @@ const baseSummaryCards = [
   {
     icon: "check",
     label: "Attendance Status",
-    value: "On Track",
-    detail: "All good",
+    value: "Loading...",
+    detail: "From attendance records",
   },
   {
     icon: "request",
@@ -137,6 +138,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
   const [selectedScheduleDate, setSelectedScheduleDate] = useState(() =>
     toDateInputValue(new Date())
   );
+  const [todayAttendance, setTodayAttendance] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -165,17 +167,21 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
   useEffect(() => {
     let isMounted = true;
 
-    const loadDashboardSchedule = async () => {
+    const loadDashboardData = async () => {
       try {
-        const data = await getSchedule(session.token);
+        const [scheduleData, attendanceData] = await Promise.all([
+          getSchedule(session.token),
+          getTodayAttendance(session.token),
+        ]);
 
         if (isMounted) {
-          setDashboardSchedule(data);
+          setDashboardSchedule(scheduleData);
+          setTodayAttendance(attendanceData);
           setDashboardScheduleError("");
           const today = toDateInputValue(new Date());
-          const selectedDate = data.days.some((day) => day.date === today)
+          const selectedDate = scheduleData.days.some((day) => day.date === today)
             ? today
-            : data.days[0]?.date;
+            : scheduleData.days[0]?.date;
 
           if (selectedDate) {
             setSelectedScheduleDate(selectedDate);
@@ -184,6 +190,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
       } catch (requestError) {
         if (isMounted) {
           setDashboardSchedule(null);
+          setTodayAttendance(null);
           setDashboardScheduleError(
             requestError.response?.data?.error || "Could not load today's location"
           );
@@ -191,7 +198,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
       }
     };
 
-    loadDashboardSchedule();
+    loadDashboardData();
 
     return () => {
       isMounted = false;
@@ -208,18 +215,37 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
     locationLabel: displayLocation(day.planned_location),
   })) || [];
   const todaySchedule = weeklySchedule.find((day) => day.isToday);
+  const todayLocation = todayAttendance?.actual_location || todaySchedule?.location;
   const summaryCards = baseSummaryCards.map((card) =>
-    card.label === "Today's Location"
-      ? {
+    {
+      if (card.label === "Today's Location") {
+        return {
           ...card,
           value: dashboardScheduleError
             ? "Unavailable"
-            : displayLocation(todaySchedule?.location),
-          detail: todaySchedule
-            ? formatLongDate(todaySchedule.fullDate)
+            : displayLocation(todayLocation),
+          detail: todayAttendance
+            ? `Submitted attendance: ${todayAttendance.status}`
+            : todaySchedule
+            ? `No attendance submitted yet - planned for ${formatLongDate(todaySchedule.fullDate)}`
             : dashboardScheduleError || "No schedule found",
-        }
-      : card
+        };
+      }
+
+      if (card.label === "Attendance Status") {
+        return {
+          ...card,
+          value: dashboardScheduleError
+            ? "Unavailable"
+            : todayAttendance?.status || "Not Submitted",
+          detail: todayAttendance
+            ? `Actual location: ${displayLocation(todayAttendance.actual_location)}`
+            : "No attendance record for today",
+        };
+      }
+
+      return card;
+    }
   );
 
   const renderPage = () => {
