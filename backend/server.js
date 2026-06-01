@@ -318,11 +318,11 @@ app.get("/api/profile", authenticate, async (req, res) => {
         e.email,
         e.employment_type,
         e.phone_number,
-        e.date_of_birth,
+        TO_CHAR(e.date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
         e.address,
         e.department,
         e.designation,
-        e.date_of_joining,
+        TO_CHAR(e.date_of_joining, 'YYYY-MM-DD') AS date_of_joining,
         COALESCE(ua.role, 'employee') AS role,
         m.full_name AS manager_name
       FROM employees e
@@ -399,11 +399,11 @@ app.patch("/api/profile", authenticate, async (req, res) => {
         e.email,
         e.employment_type,
         e.phone_number,
-        e.date_of_birth,
+        TO_CHAR(e.date_of_birth, 'YYYY-MM-DD') AS date_of_birth,
         e.address,
         e.department,
         e.designation,
-        e.date_of_joining,
+        TO_CHAR(e.date_of_joining, 'YYYY-MM-DD') AS date_of_joining,
         COALESCE(ua.role, 'employee') AS role,
         m.full_name AS manager_name
       FROM updated_employee e

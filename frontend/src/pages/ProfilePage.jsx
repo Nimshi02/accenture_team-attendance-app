@@ -14,9 +14,14 @@ const formatDate = (value) => {
     return "Not provided";
   }
 
-  return new Date(value).toLocaleDateString(undefined, {
+  const dateValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00Z`)
+    : new Date(value);
+
+  return dateValue.toLocaleDateString(undefined, {
     day: "2-digit",
     month: "short",
+    timeZone: "UTC",
     year: "numeric",
   });
 };
@@ -333,31 +338,12 @@ function ProfilePage({ onSessionUpdate, session }) {
               </div>
             ) : (
               <dl>
-                <EditableField
-                  isEditing={isEditing}
-                  label="Department"
-                  name="department"
-                  onChange={handleFieldChange}
-                  value={formValues.department}
-                  viewValue={profile.department}
-                />
-                <EditableField
-                  isEditing={isEditing}
-                  label="Designation"
-                  name="designation"
-                  onChange={handleFieldChange}
-                  value={formValues.designation}
-                  viewValue={profile.designation}
-                />
+                <DetailItem label="Department" value={profile.department} />
+                <DetailItem label="Designation" value={profile.designation} />
                 <DetailItem label="Manager" value={profile.manager_name} />
-                <EditableField
-                  isEditing={isEditing}
+                <DetailItem
                   label="Date of Joining"
-                  name="date_of_joining"
-                  onChange={handleFieldChange}
-                  type="date"
-                  value={formValues.date_of_joining}
-                  viewValue={formatDate(profile.date_of_joining)}
+                  value={formatDate(profile.date_of_joining)}
                 />
               </dl>
             )}
