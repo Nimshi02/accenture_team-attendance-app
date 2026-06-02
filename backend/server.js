@@ -445,6 +445,8 @@ app.get("/api/schedule", authenticate, async (req, res) => {
 
 app.get("/api/attendance/today", authenticate, async (req, res) => {
   try {
+    const attendanceDate = parseDateOnly(req.query.date) || new Date();
+
     const result = await pool.query(
       `
       SELECT
@@ -457,9 +459,9 @@ app.get("/api/attendance/today", authenticate, async (req, res) => {
       JOIN work_locations planned ON planned.location_id = ar.planned_location_id
       JOIN work_locations actual ON actual.location_id = ar.actual_location_id
       WHERE ar.employee_id = $1
-        AND ar.attendance_date = CURRENT_DATE;
+        AND ar.attendance_date = $2;
       `,
-      [req.user.employee_id]
+      [req.user.employee_id, formatDateOnly(attendanceDate)]
     );
 
     res.json(result.rows[0] || null);
@@ -526,6 +528,82 @@ app.get("/api/attendance/summary", authenticate, async (req, res) => {
       total_absent: summaryResult.rows[0].total_absent,
       total_work_from_home: summaryResult.rows[0].total_work_from_home,
       records: recordsResult.rows,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+app.post("/api/attendance", authenticate, async (req, res) => {
+  try {
+    const attendanceDate = parseDateOnly(req.body.attendance_date);
+    const { actual_location, status = "Present" } = req.body;
+
+    if (!attendanceDate) {
+      return res.status(400).json({ error: "Attendance date is required" });
+    }
+
+    if (!["Present", "Absent"].includes(status)) {
+      return res.status(400).json({ error: "Status must be Present or Absent" });
+    }
+
+    const locationResult = await pool.query(
+      "SELECT location_id, location_name FROM work_locations;"
+    );
+    const locationIdsByName = locationResult.rows.reduce((locationMap, location) => ({
+      ...locationMap,
+      [location.location_name]: location.location_id,
+    }), {});
+
+    if (!locationIdsByName[actual_location]) {
+      return res.status(400).json({ error: "Unknown actual work location" });
+    }
+
+    const dayName = dayNames[attendanceDate.getUTCDay()];
+    const plannedLocationResult = await pool.query(
+      `
+      SELECT wl.location_id
+      FROM employee_default_schedule eds
+      JOIN work_locations wl ON wl.location_id = eds.location_id
+      WHERE eds.employee_id = $1
+        AND eds.day_of_week = $2;
+      `,
+      [req.user.employee_id, dayName]
+    );
+    const plannedLocationId =
+      plannedLocationResult.rows[0]?.location_id || locationIdsByName.Office;
+
+    const result = await pool.query(
+      `
+      INSERT INTO attendance_records (
+        employee_id,
+        attendance_date,
+        planned_location_id,
+        actual_location_id,
+        status
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (employee_id, attendance_date)
+      DO UPDATE SET
+        planned_location_id = EXCLUDED.planned_location_id,
+        actual_location_id = EXCLUDED.actual_location_id,
+        status = EXCLUDED.status
+      RETURNING attendance_id;
+      `,
+      [
+        req.user.employee_id,
+        formatDateOnly(attendanceDate),
+        plannedLocationId,
+        locationIdsByName[actual_location],
+        status,
+      ]
+    );
+
+    res.status(201).json({
+      attendance_id: result.rows[0].attendance_id,
+      message: "Attendance recorded successfully",
     });
   } catch (error) {
     res.status(500).json({

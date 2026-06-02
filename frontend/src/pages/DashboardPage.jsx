@@ -108,7 +108,13 @@ function ScheduleIcon({ location }) {
   );
 }
 
-const toDateInputValue = (date) => date.toISOString().slice(0, 10);
+const toDateInputValue = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
 
 const parseDateOnly = (value) => {
   const [year, month, day] = value.split("-").map(Number);
@@ -173,10 +179,11 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
 
     const loadDashboardData = async () => {
       try {
+        const today = toDateInputValue(new Date());
         const [scheduleData, attendanceData, summaryData] = await Promise.all([
-          getSchedule(session.token),
-          getTodayAttendance(session.token),
-          getAttendanceSummary(session.token),
+          getSchedule(session.token, today),
+          getTodayAttendance(session.token, today),
+          getAttendanceSummary(session.token, today),
         ]);
 
         if (isMounted) {
@@ -184,7 +191,6 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
           setTodayAttendance(attendanceData);
           setAttendanceSummary(summaryData);
           setDashboardScheduleError("");
-          const today = toDateInputValue(new Date());
           const selectedDate = scheduleData.days.some((day) => day.date === today)
             ? today
             : scheduleData.days[0]?.date;
@@ -240,7 +246,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
           detail: todayAttendance
             ? `Submitted attendance: ${todayAttendance.status}`
             : todaySchedule
-            ? `No attendance submitted yet - planned for ${formatLongDate(todaySchedule.fullDate)}`
+            ? `Planned for ${formatLongDate(todaySchedule.fullDate)}`
             : dashboardScheduleError || "No schedule found",
         };
       }
@@ -248,12 +254,15 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
       if (card.label === "Attendance Status") {
         return {
           ...card,
+          iconState: todayAttendance ? "submitted" : "pending",
           value: dashboardScheduleError
             ? "Unavailable"
-            : todayAttendance?.status || "Not Submitted",
+            : todayAttendance?.status || "Pending",
           detail: todayAttendance
             ? `Actual location: ${displayLocation(todayAttendance.actual_location)}`
-            : "No attendance record for today",
+            : todaySchedule
+            ? "Ready to submit today's attendance"
+            : "No scheduled work location today",
         };
       }
 
@@ -356,7 +365,9 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
       <div className="card-grid">
         {summaryCards.map((card) => (
           <button
-            className={`summary-card metric-${card.icon}`}
+            className={`summary-card metric-${card.icon}${
+              card.iconState ? ` metric-${card.iconState}` : ""
+            }`}
             key={card.label}
             onClick={() => {
               if (card.label === "Pending Requests") {
