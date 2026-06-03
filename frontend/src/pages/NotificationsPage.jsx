@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getNotifications,
   markAllNotificationsRead,
+  markNotificationRead,
 } from "../services/notificationService";
 
 const tabs = [
@@ -106,6 +107,32 @@ function NotificationsPage({ onUnreadCountChange, session }) {
     }
   };
 
+  const handleNotificationRead = async (selectedNotification) => {
+    if (selectedNotification.is_read) {
+      return;
+    }
+
+    try {
+      await markNotificationRead(
+        session.token,
+        selectedNotification.notification_id
+      );
+
+      setNotifications((current) =>
+        current.map((notification) =>
+          notification.notification_id === selectedNotification.notification_id
+            ? { ...notification, is_read: true }
+            : notification
+        )
+      );
+      onUnreadCountChange(
+        Math.max(0, notifications.filter((item) => !item.is_read).length - 1)
+      );
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || "Could not update notification");
+    }
+  };
+
   return (
     <section className="notifications-page" aria-labelledby="notifications-title">
       <div className="page-heading">
@@ -140,13 +167,15 @@ function NotificationsPage({ onUnreadCountChange, session }) {
           <p className="empty-notifications">No notifications to show.</p>
         ) : (
           visibleNotifications.map((notification) => (
-            <article
+            <button
               className={
                 notification.is_read
                   ? "notification-item"
                   : "notification-item unread"
               }
               key={notification.notification_id}
+              onClick={() => handleNotificationRead(notification)}
+              type="button"
             >
               <span className={`notification-icon ${notification.type}`} aria-hidden="true">
                 {typeLabels[notification.type]?.slice(0, 1) || "N"}
@@ -160,7 +189,7 @@ function NotificationsPage({ onUnreadCountChange, session }) {
               <time dateTime={notification.created_at}>
                 {formatNotificationTime(notification.created_at)}
               </time>
-            </article>
+            </button>
           ))
         )}
       </div>
