@@ -217,9 +217,9 @@ const buildScheduleResponse = async (employeeId, requestedDate, view = "week") =
         [day.planned_location]: (groups[day.planned_location] || []).includes(day.day_name)
           ? groups[day.planned_location]
           : [
-              ...(groups[day.planned_location] || []),
-              day.day_name,
-            ],
+            ...(groups[day.planned_location] || []),
+            day.day_name,
+          ],
       }), {})
   ).map(([location_name, days_of_week]) => ({
     location_name,
@@ -602,6 +602,91 @@ app.patch("/api/schedule/recurring", authenticate, async (req, res) => {
     client.release();
   }
 });
+
+// jinod - start
+app.post("/api/work-location-requests", authenticate, async (req, res) => {
+  try {
+    const {
+      description,
+      purpose,
+      request_date,
+      requested_location,
+    } = req.body;
+
+    const requestedDate = parseDateOnly(request_date);
+    const normalizedLocation =
+      typeof requested_location === "string" ? requested_location.trim() : "";
+    const normalizedPurpose = typeof purpose === "string" ? purpose.trim() : "";
+    const normalizedDescription =
+      typeof description === "string" ? description.trim() : "";
+
+    if (!requestedDate) {
+      return res.status(400).json({ error: "Requesting date is required" });
+    }
+
+    if (!normalizedLocation) {
+      return res.status(400).json({ error: "Requesting location is required" });
+    }
+
+    if (!normalizedPurpose) {
+      return res.status(400).json({ error: "Purpose is required" });
+    }
+
+    if (!normalizedDescription) {
+      return res.status(400).json({ error: "Description or reason is required" });
+    }
+
+    const locationResult = await pool.query(
+      `
+      SELECT location_id, location_name
+      FROM work_locations
+      WHERE location_name = $1;
+      `,
+      [normalizedLocation]
+    );
+
+    if (locationResult.rowCount === 0) {
+      return res.status(400).json({ error: "Unknown work location" });
+    }
+
+    const reason = `Purpose: ${normalizedPurpose}\n\n${normalizedDescription}`;
+    const result = await pool.query(
+      `
+      INSERT INTO location_requests (
+        employee_id,
+        request_date,
+        requested_location_id,
+        reason,
+        status
+      )
+      VALUES ($1, $2, $3, $4, 'Pending')
+      RETURNING
+        request_id,
+        TO_CHAR(request_date, 'YYYY-MM-DD') AS request_date,
+        reason,
+        status,
+        created_at;
+      `,
+      [
+        req.user.employee_id,
+        formatDateOnly(requestedDate),
+        locationResult.rows[0].location_id,
+        reason,
+      ]
+    );
+
+    res.status(201).json({
+      ...result.rows[0],
+      purpose: normalizedPurpose,
+      requested_location: locationResult.rows[0].location_name,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+// jinod - end
 
 app.get("/api/employees", authenticate, authorize("admin", "manager"), async (req, res) => {
   try {
