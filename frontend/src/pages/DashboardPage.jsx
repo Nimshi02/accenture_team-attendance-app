@@ -13,6 +13,7 @@ import Attendance from "./Attendance";
 import MySchedulePage from "./MySchedulePage";
 import NotificationsPage from "./NotificationsPage";
 import ProfilePage from "./ProfilePage";
+import WorkLocationPage from "./WorkLocationPage";
 
 const dayLabels = {
   Friday: "Fri",
@@ -58,7 +59,11 @@ const baseSummaryCards = [
 function ScheduleIcon({ location }) {
   if (location === "Office") {
     return (
-      <svg className="schedule-icon office" viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        className="schedule-icon office"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
         <path d="M5 21V5l9-2v18" />
         <path d="M14 8h5v13" />
         <path d="M8 9h2M8 13h2M8 17h2M17 12h1M17 16h1" />
@@ -68,7 +73,11 @@ function ScheduleIcon({ location }) {
 
   if (location === "Home" || location === "Work From Home") {
     return (
-      <svg className="schedule-icon home" viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        className="schedule-icon home"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
         <path d="M4 11.5 12 5l8 6.5" />
         <path d="M6.5 10.5V21h11V10.5" />
         <path d="M10 21v-6h4v6" />
@@ -78,7 +87,11 @@ function ScheduleIcon({ location }) {
 
   if (location === "Client Site") {
     return (
-      <svg className="schedule-icon client" viewBox="0 0 24 24" aria-hidden="true">
+      <svg
+        className="schedule-icon client"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
         <path d="M12 21s6-4.8 6-10a6 6 0 0 0-12 0c0 5.2 6 10 6 10Z" />
         <path d="M12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
       </svg>
@@ -121,7 +134,8 @@ const formatLongDate = (value) =>
     year: "numeric",
   });
 
-const displayLocation = (location) => locationLabels[location] || location || "-";
+const displayLocation = (location) =>
+  locationLabels[location] || location || "-";
 
 const formatNotificationTime = (value) => {
   const createdAt = new Date(value);
@@ -151,7 +165,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
   const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [notificationCount, setNotificationCount] = useState(0);
   const [selectedScheduleDate, setSelectedScheduleDate] = useState(() =>
-    toDateInputValue(new Date())
+    toDateInputValue(new Date()),
   );
   const [todayAttendance, setTodayAttendance] = useState(null);
   const [recentNotifications, setRecentNotifications] = useState([]);
@@ -234,14 +248,15 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
   }, [loadDashboardData]);
 
   const todayValue = toDateInputValue(new Date());
-  const weeklySchedule = dashboardSchedule?.days.map((day) => ({
-    day: dayLabels[day.day_name] || day.day_name.slice(0, 3),
-    date: formatShortDate(day.date),
-    fullDate: day.date,
-    isToday: day.date === todayValue,
-    location: day.planned_location,
-    locationLabel: displayLocation(day.planned_location),
-  })) || [];
+  const weeklySchedule =
+    dashboardSchedule?.days.map((day) => ({
+      day: dayLabels[day.day_name] || day.day_name.slice(0, 3),
+      date: formatShortDate(day.date),
+      fullDate: day.date,
+      isToday: day.date === todayValue,
+      location: day.planned_location,
+      locationLabel: displayLocation(day.planned_location),
+    })) || [];
   const todaySchedule = weeklySchedule.find((day) => day.isToday);
   const todayLocation =
     todayAttendance?.status === "Absent"
@@ -268,8 +283,8 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             : todaySchedule
             ? `Planned for ${formatLongDate(todaySchedule.fullDate)}`
             : dashboardScheduleError || "No schedule found",
-        };
-      }
+      };
+    }
 
       if (card.label === "Attendance Status") {
         return {
@@ -288,25 +303,24 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
         };
       }
 
-      if (card.label === "This Week Attendance") {
-        return {
-          ...card,
-          value: !isDashboardDataLoaded
-            ? "Loading..."
-            : dashboardScheduleError
+    if (card.label === "This Week Attendance") {
+      return {
+        ...card,
+        value: !isDashboardDataLoaded
+          ? "Loading..."
+          : dashboardScheduleError
             ? "Unavailable"
             : `${attendanceRate}%`,
-          detail: !isDashboardDataLoaded
-            ? "From attendance records"
-            : dashboardScheduleError
+        detail: !isDashboardDataLoaded
+          ? "From attendance records"
+          : dashboardScheduleError
             ? dashboardScheduleError
             : `${totalPresent} / ${scheduledDays} Days`,
-        };
-      }
-
-      return card;
+      };
     }
-  );
+
+    return card;
+  });
 
   const renderPage = () => {
     if (activePage === "attendance") {
@@ -322,6 +336,10 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
       return <MySchedulePage session={session} />;
     }
 
+    if (activePage === "work-location") {
+      return <WorkLocationPage session={session} />;
+    }
+
     if (activePage === "notifications") {
       return (
         <NotificationsPage
@@ -332,7 +350,9 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
     }
 
     if (activePage === "profile") {
-      return <ProfilePage onSessionUpdate={onSessionUpdate} session={session} />;
+      return (
+        <ProfilePage onSessionUpdate={onSessionUpdate} session={session} />
+      );
     }
 
     return renderDashboardHome();
@@ -353,8 +373,7 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             onClick={() => setActivePage("notifications")}
             aria-label="Open notifications"
           >
-            !
-            {notificationCount > 0 && <span>{notificationCount}</span>}
+            !{notificationCount > 0 && <span>{notificationCount}</span>}
           </button>
           <button className="date-btn" type="button">
             <span>{formatLongDate(selectedScheduleDate)}</span>
@@ -365,20 +384,30 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             </svg>
           </button>
           <div className="profile-menu">
-            <button className="user-avatar" type="button" aria-label="Open profile menu">
+            <button
+              className="user-avatar"
+              type="button"
+              aria-label="Open profile menu"
+            >
               {session.user.full_name.slice(0, 1)}
             </button>
             <div className="profile-menu-panel">
               <button onClick={() => setActivePage("profile")} type="button">
                 My Profile
               </button>
-              <button onClick={() => setActivePage("my-schedule")} type="button">
+              <button
+                onClick={() => setActivePage("my-schedule")}
+                type="button"
+              >
                 My Work Schedule
               </button>
               <button onClick={() => setActivePage("attendance")} type="button">
                 Attendance
               </button>
-              <button onClick={() => setActivePage("notifications")} type="button">
+              <button
+                onClick={() => setActivePage("notifications")}
+                type="button"
+              >
                 Notifications
               </button>
               <button onClick={onLogout} type="button">
@@ -443,24 +472,26 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             </button>
           </div>
           <div className="week-grid">
-            {weeklySchedule.length > 0 ? weeklySchedule.map((schedule) => (
-              <button
-                className={
-                  schedule.fullDate === selectedScheduleDate
-                    ? "day-box selected"
-                    : "day-box"
-                }
-                key={`${schedule.day}-${schedule.fullDate}`}
-                onClick={() => setSelectedScheduleDate(schedule.fullDate)}
-                type="button"
-              >
-                <ScheduleIcon location={schedule.location} />
-                <span>{schedule.day}</span>
-                <strong>{schedule.date}</strong>
-                <small>{schedule.locationLabel}</small>
-                {schedule.isToday && <em>Today</em>}
-              </button>
-            )) : (
+            {weeklySchedule.length > 0 ? (
+              weeklySchedule.map((schedule) => (
+                <button
+                  className={
+                    schedule.fullDate === selectedScheduleDate
+                      ? "day-box selected"
+                      : "day-box"
+                  }
+                  key={`${schedule.day}-${schedule.fullDate}`}
+                  onClick={() => setSelectedScheduleDate(schedule.fullDate)}
+                  type="button"
+                >
+                  <ScheduleIcon location={schedule.location} />
+                  <span>{schedule.day}</span>
+                  <strong>{schedule.date}</strong>
+                  <small>{schedule.locationLabel}</small>
+                  {schedule.isToday && <em>Today</em>}
+                </button>
+              ))
+            ) : (
               <p className="profile-status">
                 {dashboardScheduleError || "Loading schedule..."}
               </p>
