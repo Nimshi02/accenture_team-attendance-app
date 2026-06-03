@@ -790,6 +790,33 @@ app.patch("/api/notifications/read-all", authenticate, async (req, res) => {
   }
 });
 
+app.patch("/api/notifications/:notificationId/read", authenticate, async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+
+    const result = await pool.query(
+      `
+      UPDATE notifications
+      SET is_read = TRUE
+      WHERE notification_id = $1
+        AND employee_id = $2
+      RETURNING notification_id, is_read;
+      `,
+      [notificationId, req.user.employee_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
 
 const PORT = process.env.PORT || 5000;
 

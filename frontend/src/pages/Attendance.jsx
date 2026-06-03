@@ -75,7 +75,10 @@ const displayAttendanceDate = (summary) =>
 const displayLocation = (location) =>
   location === "Home" ? "Work From Home" : location || "-";
 
-export default function Attendance({ session }) {
+const displayAttendanceLocation = (record) =>
+  record.status === "Absent" ? "-" : displayLocation(record.actual_location);
+
+export default function Attendance({ onAttendanceSaved, session }) {
   const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [schedule, setSchedule] = useState(null);
   const [error, setError] = useState("");
@@ -107,9 +110,16 @@ export default function Attendance({ session }) {
           setSchedule(scheduleData);
 
           const todaySchedule = scheduleData.days.find((day) => day.date === today);
+          const todayRecord = summary.records?.find(
+            (record) => record.attendance_date === today
+          );
           setFormData((currentFormData) => ({
             ...currentFormData,
-            actual_location: todaySchedule?.planned_location || "Office",
+            actual_location:
+              todayRecord?.actual_location ||
+              todaySchedule?.planned_location ||
+              "Office",
+            status: todayRecord?.status || currentFormData.status,
           }));
         }
       } catch (requestError) {
@@ -158,11 +168,18 @@ export default function Attendance({ session }) {
   const handleDateChange = (event) => {
     const nextDate = event.target.value;
     const nextSchedule = schedule?.days.find((day) => day.date === nextDate);
+    const nextRecord = attendanceSummary?.records?.find(
+      (record) => record.attendance_date === nextDate
+    );
 
     setFormData((currentFormData) => ({
       ...currentFormData,
       attendance_date: nextDate,
-      actual_location: nextSchedule?.planned_location || currentFormData.actual_location,
+      actual_location:
+        nextRecord?.actual_location ||
+        nextSchedule?.planned_location ||
+        currentFormData.actual_location,
+      status: nextRecord?.status || "Present",
     }));
     setFormMessage("");
   };
@@ -176,6 +193,7 @@ export default function Attendance({ session }) {
     try {
       const response = await recordAttendance(session.token, formData);
       await refreshAttendanceSummary();
+      await onAttendanceSaved?.();
       setFormMessage(response.message || "Attendance recorded successfully");
     } catch (requestError) {
       setFormMessage(
@@ -230,21 +248,6 @@ export default function Attendance({ session }) {
           </label>
 
           <label className="profile-form-field">
-            <span>Actual Work Location</span>
-            <select
-              name="actual_location"
-              onChange={handleFormChange}
-              value={formData.actual_location}
-            >
-              {locationOptions.map((location) => (
-                <option key={location} value={location}>
-                  {displayLocation(location)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="profile-form-field">
             <span>Status</span>
             <select
               name="status"
@@ -255,6 +258,23 @@ export default function Attendance({ session }) {
               <option value="Absent">Absent</option>
             </select>
           </label>
+
+          {formData.status !== "Absent" && (
+            <label className="profile-form-field">
+              <span>Actual Work Location</span>
+              <select
+                name="actual_location"
+                onChange={handleFormChange}
+                value={formData.actual_location}
+              >
+                {locationOptions.map((location) => (
+                  <option key={location} value={location}>
+                    {displayLocation(location)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <button className="primary-button" disabled={isSubmitting} type="submit">
             {isSubmitting
@@ -337,7 +357,7 @@ export default function Attendance({ session }) {
                 <tr key={record.attendance_id}>
                   <td>{formatLongDate(record.attendance_date)}</td>
                   <td>{formatDayName(record.attendance_date)}</td>
-                  <td>{displayLocation(record.actual_location)}</td>
+                  <td>{displayAttendanceLocation(record)}</td>
                   <td>
                     <span className={`badge ${record.status.toLowerCase()}`}>
                       {record.status}

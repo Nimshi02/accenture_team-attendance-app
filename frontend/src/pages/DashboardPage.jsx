@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AppLayout from "../layouts/AppLayout";
 import {
   getAttendanceSummary,
   getTodayAttendance,
 } from "../services/attendanceService";
-import { getUnreadNotificationCount } from "../services/notificationService";
+import {
+  getNotifications,
+  getUnreadNotificationCount,
+} from "../services/notificationService";
 import { getSchedule } from "../services/scheduleService";
 import Attendance from "./Attendance";
 import MySchedulePage from "./MySchedulePage";
@@ -49,25 +52,6 @@ const baseSummaryCards = [
     label: "This Week Attendance",
     value: "Loading...",
     detail: "From attendance records",
-  },
-];
-
-const recentNotifications = [
-  {
-    title: "Your alternate location request for 16 May is approved.",
-    time: "10:30 AM",
-  },
-  {
-    title: "Your work location for 13 May has been recorded successfully.",
-    time: "Yesterday",
-  },
-  {
-    title: "Reminder: Please submit your work location for tomorrow.",
-    time: "Yesterday",
-  },
-  {
-    title: "Team meeting scheduled on 15 May at 11:00 AM.",
-    time: "2 May",
   },
 ];
 
@@ -139,6 +123,27 @@ const formatLongDate = (value) =>
 
 const displayLocation = (location) => locationLabels[location] || location || "-";
 
+const formatNotificationTime = (value) => {
+  const createdAt = new Date(value);
+  const now = new Date();
+  const diffMinutes = Math.max(1, Math.round((now - createdAt) / 60000));
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min`;
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours}h`;
+  }
+
+  return createdAt.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
+};
+
 function DashboardPage({ onLogout, onSessionUpdate, session }) {
   const [activePage, setActivePage] = useState("dashboard");
   const [dashboardSchedule, setDashboardSchedule] = useState(null);
@@ -149,74 +154,84 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
     toDateInputValue(new Date())
   );
   const [todayAttendance, setTodayAttendance] = useState(null);
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(true);
 
   useEffect(() => {
+    if (activePage !== "dashboard") {
+      return undefined;
+    }
+
     let isMounted = true;
 
-    const loadNotificationCount = async () => {
+    const loadNotifications = async () => {
+      setIsNotificationsLoading(true);
+
       try {
-        const count = await getUnreadNotificationCount(session.token);
+        const [count, notifications] = await Promise.all([
+          getUnreadNotificationCount(session.token),
+          getNotifications(session.token),
+        ]);
 
         if (isMounted) {
           setNotificationCount(count);
+          setRecentNotifications(notifications.slice(0, 4));
         }
       } catch {
         if (isMounted) {
           setNotificationCount(0);
+          setRecentNotifications([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsNotificationsLoading(false);
         }
       }
     };
 
-    loadNotificationCount();
+    loadNotifications();
 
     return () => {
       isMounted = false;
     };
+  }, [activePage, session.token]);
+
+  const loadDashboardData = useCallback(async ({ updateSelectedDate = true } = {}) => {
+    try {
+      const today = toDateInputValue(new Date());
+      const [scheduleData, attendanceData, summaryData] = await Promise.all([
+        getSchedule(session.token, today),
+        getTodayAttendance(session.token, today),
+        getAttendanceSummary(session.token, today),
+      ]);
+
+      setDashboardSchedule(scheduleData);
+      setTodayAttendance(attendanceData);
+      setAttendanceSummary(summaryData);
+      setDashboardScheduleError("");
+
+      if (updateSelectedDate) {
+        const selectedDate = scheduleData.days.some((day) => day.date === today)
+          ? today
+          : scheduleData.days[0]?.date;
+
+        if (selectedDate) {
+          setSelectedScheduleDate(selectedDate);
+        }
+      }
+    } catch (requestError) {
+      setDashboardSchedule(null);
+      setAttendanceSummary(null);
+      setTodayAttendance(null);
+      setDashboardScheduleError(
+        requestError.response?.data?.error || "Could not load today's location"
+      );
+    }
   }, [session.token]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadDashboardData = async () => {
-      try {
-        const today = toDateInputValue(new Date());
-        const [scheduleData, attendanceData, summaryData] = await Promise.all([
-          getSchedule(session.token, today),
-          getTodayAttendance(session.token, today),
-          getAttendanceSummary(session.token, today),
-        ]);
-
-        if (isMounted) {
-          setDashboardSchedule(scheduleData);
-          setTodayAttendance(attendanceData);
-          setAttendanceSummary(summaryData);
-          setDashboardScheduleError("");
-          const selectedDate = scheduleData.days.some((day) => day.date === today)
-            ? today
-            : scheduleData.days[0]?.date;
-
-          if (selectedDate) {
-            setSelectedScheduleDate(selectedDate);
-          }
-        }
-      } catch (requestError) {
-        if (isMounted) {
-          setDashboardSchedule(null);
-          setAttendanceSummary(null);
-          setTodayAttendance(null);
-          setDashboardScheduleError(
-            requestError.response?.data?.error || "Could not load today's location"
-          );
-        }
-      }
-    };
-
     loadDashboardData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [session.token]);
+  }, [loadDashboardData]);
 
   const todayValue = toDateInputValue(new Date());
   const weeklySchedule = dashboardSchedule?.days.map((day) => ({
@@ -228,7 +243,10 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
     locationLabel: displayLocation(day.planned_location),
   })) || [];
   const todaySchedule = weeklySchedule.find((day) => day.isToday);
-  const todayLocation = todayAttendance?.actual_location || todaySchedule?.location;
+  const todayLocation =
+    todayAttendance?.status === "Absent"
+      ? null
+      : todayAttendance?.actual_location || todaySchedule?.location;
   const isDashboardDataLoaded = Boolean(dashboardSchedule && attendanceSummary);
   const scheduledDays = weeklySchedule.filter((day) => day.location).length;
   const totalPresent = attendanceSummary?.total_present || 0;
@@ -242,6 +260,8 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
           ...card,
           value: dashboardScheduleError
             ? "Unavailable"
+            : todayAttendance?.status === "Absent"
+            ? "Absent"
             : displayLocation(todayLocation),
           detail: todayAttendance
             ? `Submitted attendance: ${todayAttendance.status}`
@@ -259,7 +279,9 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             ? "Unavailable"
             : todayAttendance?.status || "Pending",
           detail: todayAttendance
-            ? `Actual location: ${displayLocation(todayAttendance.actual_location)}`
+            ? todayAttendance.status === "Absent"
+              ? "No work location recorded"
+              : `Actual location: ${displayLocation(todayAttendance.actual_location)}`
             : todaySchedule
             ? "Ready to submit today's attendance"
             : "No scheduled work location today",
@@ -288,7 +310,12 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
 
   const renderPage = () => {
     if (activePage === "attendance") {
-      return <Attendance session={session} />;
+      return (
+        <Attendance
+          onAttendanceSaved={() => loadDashboardData({ updateSelectedDate: false })}
+          session={session}
+        />
+      );
     }
 
     if (activePage === "my-schedule") {
@@ -453,16 +480,25 @@ function DashboardPage({ onLogout, onSessionUpdate, session }) {
             </button>
           </div>
           <div className="compact-notification-list">
-            {recentNotifications.map((notification) => (
+            {isNotificationsLoading ? (
+              <p className="profile-status">Loading notifications...</p>
+            ) : recentNotifications.length === 0 ? (
+              <p className="profile-status">No notifications to show.</p>
+            ) : recentNotifications.map((notification) => (
               <button
                 className="compact-notification"
-                key={notification.title}
+                key={notification.notification_id}
                 onClick={() => setActivePage("notifications")}
                 type="button"
               >
-                <span aria-hidden="true" />
+                <span
+                  aria-hidden="true"
+                  className={notification.is_read ? "" : "unread-dot"}
+                />
                 <p>{notification.title}</p>
-                <time>{notification.time}</time>
+                <time dateTime={notification.created_at}>
+                  {formatNotificationTime(notification.created_at)}
+                </time>
               </button>
             ))}
           </div>

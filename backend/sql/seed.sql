@@ -289,6 +289,9 @@ FROM (
   ('priya.shah@company.com', 'general', 'info', 'Reminder: Please submit your work location for tomorrow', 'Your schedule is missing tomorrow''s work location.', TRUE, '2026-05-27 15:10:00'),
   ('priya.shah@company.com', 'requests', 'warning', 'Team meeting scheduled on 15 May at 9:00 AM', 'Please attend from your planned location.', TRUE, '2026-05-27 08:40:00'),
   ('priya.shah@company.com', 'system', 'system', 'System maintenance scheduled on 25 May from 9:00 PM to 10:00 AM', 'Attendance services may be briefly unavailable.', TRUE, '2026-05-26 14:00:00'),
+  ('priya.shah@company.com', 'general', 'warning', 'Attendance check required for 30 May', 'Please confirm your attendance record for the end-of-week review.', FALSE, '2026-05-30 16:20:00'),
+  ('priya.shah@company.com', 'requests', 'success', 'Location request for 31 May is approved', 'Your manager approved your requested work location update.', FALSE, '2026-05-30 13:05:00'),
+  ('priya.shah@company.com', 'system', 'info', 'Monthly attendance summary is available', 'Your May attendance summary is ready to review from the dashboard.', TRUE, '2026-05-30 09:15:00'),
 
   ('alex.turner@company.com', 'requests', 'info', 'Priya Shah submitted a new work location request', 'Review the request before the next schedule update.', FALSE, '2026-05-29 11:15:00'),
   ('alex.turner@company.com', 'general', 'warning', 'Two team members have pending location updates', 'Check team attendance before end of day.', FALSE, '2026-05-29 09:45:00'),
