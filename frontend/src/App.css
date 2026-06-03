@@ -716,9 +716,27 @@ button.summary-card:focus-visible {
 }
 
 .metric-check .metric-icon::before {
-  content: "OK";
+  content: "";
+  width: 12px;
+  height: 20px;
+  border-right: 4px solid #16a34a;
+  border-bottom: 4px solid #16a34a;
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+
+.metric-check.metric-pending .metric-icon {
+  background: #fff7ed;
+}
+
+.metric-check.metric-pending .metric-icon::before {
+  content: "!";
   color: #16a34a;
-  font-size: 0.82rem;
+  width: auto;
+  height: auto;
+  border: 0;
+  color: #f97316;
+  font-size: 1.35rem;
+  transform: none;
 }
 
 .metric-request .metric-icon::before {
@@ -1058,6 +1076,10 @@ button.day-box.selected {
   background: #eef0ff;
 }
 
+.compact-notification span.unread-dot {
+  background: var(--accent);
+}
+
 .compact-notification p {
   color: #20293a;
   line-height: 1.35;
@@ -1073,6 +1095,55 @@ button.day-box.selected {
   width: 100%;
   margin-top: 16px;
   border-collapse: collapse;
+}
+
+.attendance-entry-panel {
+  margin-bottom: 24px;
+}
+
+.attendance-entry-form {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(190px, 1fr) minmax(140px, 0.7fr) auto;
+  align-items: end;
+  gap: 16px;
+}
+
+.profile-form-field select {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  border: 1px solid #dce3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #20293a;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 8px 11px;
+}
+
+.profile-form-field select:focus {
+  border-color: var(--accent);
+  outline: 3px solid rgba(75, 63, 225, 0.12);
+}
+
+.primary-button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.form-status {
+  margin-top: 12px;
+  font-weight: 800;
 }
 
 .attendance-table th,
@@ -1171,10 +1242,20 @@ button.day-box.selected {
   grid-template-columns: 38px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
+  width: 100%;
   padding: 14px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: #ffffff;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.notification-item:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.24);
+  outline-offset: 2px;
 }
 
 .notification-item.unread {
@@ -2116,6 +2197,7 @@ button.day-box.selected {
 
   .card-grid,
   .summary-grid,
+  .attendance-entry-form,
   .cards,
   .profile-card-grid,
   .content-grid,

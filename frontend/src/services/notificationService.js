@@ -32,3 +32,13 @@ export const markAllNotificationsRead = async (token) => {
 
   return response.data;
 };
+
+export const markNotificationRead = async (token, notificationId) => {
+  const response = await axios.patch(
+    `${API_BASE_URL}/api/notifications/${notificationId}/read`,
+    {},
+    authHeaders(token)
+  );
+
+  return response.data;
+};
